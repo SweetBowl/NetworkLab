@@ -71,51 +71,61 @@ void echo_rep(int sockfd) {
         }
         // TODO 若read返回0（并非指定读0字节返回零），return；
         if (res==0) {
+            printf("[srv] connfd is closed!\n");
             return;
         }
         // (2) 按长读取数据；
         // TODO 采用malloc，根据数据长度分配buf；
+        len_h = ntohl(len_n);
         int read_amnt = 0,len_to_read =len_h;
-        buf = (char*)malloc(len_h+1 *sizeof(char));
-        do{
+        buf = (char*)malloc((len_h+1) *sizeof(char));
+        //do{
             // TODO 按长读取数据： res = read(x,x,x);
-            res = read(sockfd, buf, len_to_read);
-            // 以下代码紧跟read();
-            if(res < 0){
-                printf("[srv] read data return %d and errno is %d\n", res, errno);
-                if(errno == EINTR){
-                   // printf("Test 3\n");
-                    if(sig_type == SIGINT){
-                   //     printf("Test 4\n");
-                        free(buf);
-                        return;//但凡收到SIGINT，指示服务器结束
-                    }
-                    continue;//若是其他信号中断，则重新执行读取
+        res = read(sockfd, buf, len_h);
+        // 以下代码紧跟read();
+        if(res < 0){
+            printf("[srv] read data return %d and errno is %d\n", res, errno);
+            if(errno == EINTR){
+               // printf("Test 3\n");
+                if(sig_type == SIGINT){
+               //     printf("Test 4\n");
+                    free(buf);
+                    return;//但凡收到SIGINT，指示服务器结束
                 }
-                free(buf);
-                return;
+                continue;//若是其他信号中断，则重新执行读取
             }
-            // TODO 若read返回0（并非指定读0字节返回零），return；
-            if (res==0) {
-                free(buf);
-                return;
-            }
-            //不断从服务套接字读取收到的字符数，加入到read_amnt统计变量中
-            read_amnt+=res;
-            if (read_amnt==len_h) {
-                break;
-            }
-            else if (read_amnt<len_h){
-                printf("[srv] read_amnt < len\n");
-                len_to_read = len_h-read_amnt;
-                buf=buf+read_amnt;
-            }
-            else{
-                printf("[srv] read_amnt > len\n");
-                free(buf);
-                return;
-            }
-        }while(1);
+            free(buf);
+            return;
+        }
+        // TODO 若read返回0（并非指定读0字节返回零），return；
+        else if (res==0) {
+            printf("[srv] connfd is closed!\n");
+            free(buf);
+            return;
+        }
+        
+        while (res<len_h) {
+            res = res+read(sockfd,buf+res,len_h-res);
+        }
+        
+        /*
+        //不断从服务套接字读取收到的字符数，加入到read_amnt统计变量中
+        read_amnt+=res;
+        if (read_amnt>=len_h) {
+            break;
+        }
+        else if (read_amnt<len_h){
+           // printf("[srv] read_amnt < len\n");
+            len_to_read = len_h-read_amnt;
+            buf=buf+read_amnt;
+        }
+        else{
+            //printf("[srv] read_amnt > len\n");
+            free(buf);
+            return;
+        }
+        //}while(1);
+         */
 
         // 本轮数据长度以及数据本身的读取结束：
         buf[res]='\0';
@@ -127,6 +137,7 @@ void echo_rep(int sockfd) {
         // TODO 发送结束，释放buf；
         free(buf);
     }while(1);
+    return;
 }
 
 int main(int argc, char* argv[])
@@ -193,12 +204,12 @@ int main(int argc, char* argv[])
         echo_rep(connfd);
         // TODO 业务函数退出，关闭connfd;
         close(connfd);
-        printf("[srv] connfd is closed!\n");
+//        printf("[srv] connfd is closed!\n");
     }
     // TODO accpet()主循环结束，关闭lstenfd;
     close(listenfd);
     printf("[srv] listenfd is closed!\n");
-    printf("[srv] server is exiting\n");
+    printf("[srv] server is going to exit!\n");
     return 0;
 }
 

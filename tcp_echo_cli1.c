@@ -47,14 +47,14 @@ int echo_rqt(int sockfd) {
         // TODO 根据读写边界定义，先发数据长度，再发缓存数据
         write(sockfd, &len_n, sizeof(len_n));
         write(sockfd, buf, len_h*sizeof(char));
-        memset(buf, 0, sizeof(buf));        //缓冲区清零
+        memset(buf, 0, MAX_CMD_STR+1);        //缓冲区清零
         // TODO 读取服务器echo回显数据，并打印输出到stdout，依然是先读长度，再根据长度读取数据。
         int res = read(sockfd, &len_n, sizeof(len_n));
         if (res<=0) {
             break;
         }
         len_h = ntohl(len_n);
-        read(sockfd, buf, len_h);
+        res = read(sockfd, buf, len_h);
         while (res<len_h) {
             res = res+read(sockfd,buf+res,len_h-res);
         }
