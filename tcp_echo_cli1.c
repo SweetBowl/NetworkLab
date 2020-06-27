@@ -34,12 +34,11 @@ int echo_rqt(int sockfd) {
         }
         // TODO 查询所读取1行字符的长度，并将行末'\n'更换为'\0'
         /* int型长度变量在读写时请特别注意字节序转换！强烈建议做如下定义，以示区分：*/
-        int len_h = 0; // 按主机字节序读写的长度变量；
+//        int len_h = 0; // 按主机字节序读写的长度变量；
         int len_n = 0; // 按网络字节序读写的长度变量；
             
         int len_h = strnlen(buf, MAX_CMD_STR);    //取字符串长度
         len_n = htonl(len_h);
-//        len_h = ntohl(len_n);
 //        int read_amount = 0,len_to_read=len;
         
         if (buf[len_h-1]=='\n') {
@@ -47,11 +46,18 @@ int echo_rqt(int sockfd) {
         }
         // TODO 根据读写边界定义，先发数据长度，再发缓存数据
         write(sockfd, &len_n, sizeof(len_n));
-        write(sockfd, buf, len_n);
+        write(sockfd, buf, len_h*sizeof(char));
         memset(buf, 0, sizeof(buf));        //缓冲区清零
         // TODO 读取服务器echo回显数据，并打印输出到stdout，依然是先读长度，再根据长度读取数据。
-        read(sockfd, &len_n, sizeof(len_n));
-        read(sockfd, buf, len_n);
+        int res = read(sockfd, &len_n, sizeof(len_n));
+        if (res<=0) {
+            break;
+        }
+        len_h = ntohl(len_n);
+        read(sockfd, buf, len_h);
+        while (res<len_h) {
+            res = res+read(sockfd,buf+res,len_h-res);
+        }
         printf("[echo_rep] %s\n",buf);
 
 /* 在通过read()读取数据时，有可能因为网络传输等问题，使得read()期望读取长度为LEN的数据，但是首次读取仅返回了长度为RES(RES < LEN)的数据（剩余数据尚未接收至系统内核缓存）。因此在read()后必须进行合理判断、循环读取，直至多次read()返回的RES累加和等于LEN，否则读取数据不完整。测试平台刻意制造了必须多次读取的场景，故要求客户端、服务器都必须执行*/
