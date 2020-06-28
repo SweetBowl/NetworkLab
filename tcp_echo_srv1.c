@@ -157,7 +157,7 @@ int main(int argc, char* argv[])
 
     // TODO 安装SIGINT信号处理器
     struct sigaction sigact_int, old_sigact_int;
-    sigact_int.sa_handler = &sig_int;
+    sigact_int.sa_handler = sig_int;
     sigemptyset(&sigact_int.sa_mask);
     sigact_int.sa_flags = 0;
     sigaction(SIGINT, &sigact_int, NULL);
@@ -171,7 +171,6 @@ int main(int argc, char* argv[])
     socklen_t clilen;
     
     // TODO 获取Socket监听描述符: listenfd = socket(x,x,x);
-    listenfd = socket(PF_INET, SOCK_STREAM, 0);
     bzero(&srv_addr, sizeof(srv_addr));
     // TODO 初始化服务器Socket地址srv_addr，其中会用到argv[1]、argv[2]
         /* IP地址转换推荐使用inet_pton()；端口地址转换推荐使用atoi(); */
@@ -183,11 +182,12 @@ int main(int argc, char* argv[])
     // TODO 按题设要求打印服务器端地址server[ip:port]，推荐使用inet_ntop();
     printf("[srv] server[%s:%d] is initializing!\n",inet_ntop(AF_INET, &srv_addr.sin_addr, ip_str, sizeof(ip_str)),(int)ntohs(srv_addr.sin_port));
     // TODO 绑定服务器Socket地址: res = bind(x,x,x);
+    listenfd = socket(PF_INET, SOCK_STREAM, 0);
+    if (listenfd == -1)  return 0;
     res = bind(listenfd, (struct sockaddr*)&srv_addr, sizeof(srv_addr));
     if (res == -1) return 0;
     // TODO 开启服务监听: res = listen(x,x);
     res = listen(listenfd, BACKLOG);
-    if (listenfd == -1)  return 0;
     if (res == -1) return 0;
 
     // 开启accpet()主循环，直至sig_to_exit指示服务器退出；
@@ -204,7 +204,7 @@ int main(int argc, char* argv[])
             continue;
 
         // TODO 按题设要求打印客户端端地址client[ip:port]，推荐使用inet_ntop();
-        printf("[srv] client[%s:%d] is accepted!\n",inet_ntop(AF_INET, &cli_addr.sin_addr, ip_str, sizeof(ip_str)),(int)ntohs(srv_addr.sin_port));
+        printf("[srv] client[%s:%d] is accepted!\n",inet_ntoa(cli_addr.sin_addr),ntohs(cli_addr.sin_port));
         // TODO 执行业务处理函数echo_rep()，进入业务处理循环;
         echo_rep(connfd);
         // TODO 业务函数退出，关闭connfd;
