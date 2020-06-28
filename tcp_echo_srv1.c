@@ -45,14 +45,14 @@ void echo_rep(int sockfd) {
     // TODO 定义数据长度变量len，以及读取结果变量res；
 //    int len = 0;
     int res;
+    /* int型长度变量在读写时请特别注意字节序转换！*/
+    int len_h = 0; // 按主机字节序读写的长度变量；
+    int len_n = 0; // 按网络字节序读写的长度变量；
     // TODO 定义缓存指针变量buf;
     char *buf = NULL;
     do{
         // (1) TODO 读取数据长度： res = read(x,x,x);
-        /* int型长度变量在读写时请特别注意字节序转换！*/
-        int len_h = 0; // 按主机字节序读写的长度变量；
-        int len_n = 0; // 按网络字节序读写的长度变量；
-        len_n = htonl(len_h);
+//        len_n = htonl(len_h);
 //        len_h = ntohl(len_n);
         res = read(sockfd, &len_n, sizeof(len_n));
         
@@ -63,11 +63,11 @@ void echo_rep(int sockfd) {
                // printf("Test 1\n");
                 if(sig_type == SIGINT){
                  //   printf("Test 2\n");
-                    return;//但凡收到SIGINT，指示服务器结束
+                    return 0;//但凡收到SIGINT，指示服务器结束
                 }
                 continue;//若是其他信号中断，则重新执行读取
             }
-            return;
+            return 0;
         }
         // TODO 若read返回0（并非指定读0字节返回零），return；
         if (res==0) {
@@ -133,7 +133,7 @@ void echo_rep(int sockfd) {
         printf("[echo_rqt] %s\n",buf);
         // TODO 回写客户端[echo_rep]信息；根据读写边界定义，同样需先发长度，再发数据：res = write(x,x,x);res = write(x,x,x);
         write(sockfd, &len_n, sizeof(len_n));
-        write(sockfd, buf, len_n);
+        write(sockfd, buf, len_h);
         // TODO 发送结束，释放buf；
         free(buf);
     }while(1);
@@ -167,7 +167,7 @@ int main(int argc, char* argv[])
     char ip_str[20]={0};
     struct sockaddr_in srv_addr;
     struct sockaddr_in cli_addr;
-    int listenfd, connfd;
+    int listenfd, connfd,res;
     socklen_t clilen;
     
     // TODO 获取Socket监听描述符: listenfd = socket(x,x,x);
@@ -176,14 +176,19 @@ int main(int argc, char* argv[])
     // TODO 初始化服务器Socket地址srv_addr，其中会用到argv[1]、argv[2]
         /* IP地址转换推荐使用inet_pton()；端口地址转换推荐使用atoi(); */
     srv_addr.sin_family = AF_INET;
-    srv_addr.sin_addr.s_addr=inet_addr(argv[1]);
+//    srv_addr.sin_addr.s_addr=inet_addr(argv[1]);
+    inet_pton(AF_INET, argv[1], &srv_addr.sin_addr);
     srv_addr.sin_port = htons(atoi(argv[2]));
+    
     // TODO 按题设要求打印服务器端地址server[ip:port]，推荐使用inet_ntop();
     printf("[srv] server[%s:%d] is initializing!\n",inet_ntop(AF_INET, &srv_addr.sin_addr, ip_str, sizeof(ip_str)),(int)ntohs(srv_addr.sin_port));
     // TODO 绑定服务器Socket地址: res = bind(x,x,x);
-    bind(listenfd, (struct sockaddr*)&srv_addr, sizeof(srv_addr));
+    res = bind(listenfd, (struct sockaddr*)&srv_addr, sizeof(srv_addr));
+    if (res == -1) return 0;
     // TODO 开启服务监听: res = listen(x,x);
-    listen(listenfd, BACKLOG);
+    res = listen(listenfd, BACKLOG);
+    if (listenfd == -1)  return 0;
+    if (res == -1) return 0;
 
     // 开启accpet()主循环，直至sig_to_exit指示服务器退出；
     while(!sig_to_exit)

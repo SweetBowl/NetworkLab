@@ -42,7 +42,7 @@ int echo_rqt(int sockfd) {
 //        int read_amount = 0,len_to_read=len;
         
         if (buf[len_h-1]=='\n') {
-            buf[len_h-1]=0;
+            buf[len_h-1]='\0';
         }
         // TODO 根据读写边界定义，先发数据长度，再发缓存数据
         write(sockfd, &len_n, sizeof(len_n));
@@ -78,6 +78,7 @@ int main(int argc,char* argv[])
         return 0;
     }
     
+    bzero(&srv_addr,sizeof(srv_addr));
     struct sigaction sigact_pipe, old_sigact_pipe;
     sigact_pipe.sa_handler = sig_pipe;
     sigemptyset(&sigact_pipe.sa_mask);
@@ -86,23 +87,34 @@ int main(int argc,char* argv[])
     sigaction(SIGPIPE, &sigact_pipe, &old_sigact_pipe);
     
     // TODO 获取Socket连接描述符: connfd = socket(x,x,x);
-    connfd = socket(PF_INET, SOCK_STREAM, 0);
+    if ((connfd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
+        perror("Create socket failed.");
+        exit(1);
+    }
     memset(&srv_addr, 0, sizeof(srv_addr));
     
     // TODO 初始化服务器Socket地址srv_addr，其中会用到argv[1]、argv[2]
         /* IP地址转换推荐使用inet_pton()；端口地址转换推荐使用atoi(); */
     srv_addr.sin_family = AF_INET;
-    inet_pton(AF_INET, argv[1], &srv_addr.sin_addr);
+//    inet_pton(AF_INET, argv[1], &srv_addr.sin_addr);
+    if(inet_pton(AF_INET, argv[1], &srv_addr.sin_addr) == 0){
+        perror("Server IP Address Error:\n");
+        exit(1);
+    }
     srv_addr.sin_port = htons(atoi(argv[2]));
     
     // TODO 连接服务器，结果存于res: int res = connect(x,x,x);
     do {
         //死循环
         int res =connect(connfd, (struct sockaddr*)&srv_addr, sizeof(srv_addr));
+        if (res ==-1) {
+            perror("connect failed.");
+            exit(1);
+        }
         if(res == 0){
             // TODO 连接成功，按题设要求打印服务器端地址server[ip:port]
             char ip_str[20] = {0};
-            printf("[cli] server[%s:%d] is connetd!\n",inet_ntop(AF_INET, &srv_addr.sin_addr, ip_str, sizeof(ip_str)),ntohs(srv_addr.sin_port));
+            printf("[cli] server[%s:%d] is connected!\n",inet_ntop(AF_INET, &srv_addr.sin_addr, ip_str, sizeof(ip_str)),ntohs(srv_addr.sin_port));
             //如果是非0值，表示程序是非正常退出，终端
             if (!echo_rqt(connfd)) {
                 break;
