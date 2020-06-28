@@ -77,31 +77,32 @@ int main(int argc,char* argv[])
         printf("Usage:%s <IP> <PORT>\n", argv[0]);
         return 0;
     }
-    
-    bzero(&srv_addr,sizeof(srv_addr));
+    /*
     struct sigaction sigact_pipe, old_sigact_pipe;
     sigact_pipe.sa_handler = sig_pipe;
     sigemptyset(&sigact_pipe.sa_mask);
     sigact_pipe.sa_flags = 0;
     sigact_pipe.sa_flags |= SA_RESTART;
     sigaction(SIGPIPE, &sigact_pipe, &old_sigact_pipe);
-    
+    */
     // TODO 获取Socket连接描述符: connfd = socket(x,x,x);
-    if ((connfd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
-        perror("Create socket failed.");
-        exit(1);
-    }
-    memset(&srv_addr, 0, sizeof(srv_addr));
+//    memset(&srv_addr, sizeof(srv_addr));
     
     // TODO 初始化服务器Socket地址srv_addr，其中会用到argv[1]、argv[2]
         /* IP地址转换推荐使用inet_pton()；端口地址转换推荐使用atoi(); */
+    bzero(&srv_addr,sizeof(srv_addr));
     srv_addr.sin_family = AF_INET;
-//    inet_pton(AF_INET, argv[1], &srv_addr.sin_addr);
     if(inet_pton(AF_INET, argv[1], &srv_addr.sin_addr) == 0){
         perror("Server IP Address Error:\n");
         exit(1);
     }
     srv_addr.sin_port = htons(atoi(argv[2]));
+    if ((connfd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
+        perror("Create socket failed.");
+        exit(1);
+    }
+//    inet_pton(AF_INET, argv[1], &srv_addr.sin_addr);
+
     
     // TODO 连接服务器，结果存于res: int res = connect(x,x,x);
     do {

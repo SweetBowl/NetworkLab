@@ -63,11 +63,11 @@ void echo_rep(int sockfd) {
                // printf("Test 1\n");
                 if(sig_type == SIGINT){
                  //   printf("Test 2\n");
-                    return 0;//但凡收到SIGINT，指示服务器结束
+                    return;//但凡收到SIGINT，指示服务器结束
                 }
                 continue;//若是其他信号中断，则重新执行读取
             }
-            return 0;
+            return;
         }
         // TODO 若read返回0（并非指定读0字节返回零），return；
         if (res==0) {
@@ -160,7 +160,7 @@ int main(int argc, char* argv[])
     sigact_int.sa_handler = &sig_int;
     sigemptyset(&sigact_int.sa_mask);
     sigact_int.sa_flags = 0;
-    sigaction(SIGINT, &sigact_int, &old_sigact_int);
+    sigaction(SIGINT, &sigact_int, NULL);
     // TODO 定义服务器Socket地址srv_addr，以及客户端Socket地址cli_addr；
     // TODO 定义客户端Socket地址长度cli_addr_len（类型为socklen_t）；
     // TODO 定义Socket监听描述符listenfd，以及Socket连接描述符connfd；
