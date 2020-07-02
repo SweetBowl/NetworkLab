@@ -40,6 +40,8 @@ void sig_pipe(int signo) {
     sig_to_exit = signo;
     bprintf(fp_res,"[srv](%d) SIGPIPE is coming!\n",pid);
 }
+
+//自定义sig_chld后来没用到
 void sig_chld(int signo){
     sig_type = signo;
     sig_to_exit = signo;
@@ -75,7 +77,7 @@ int install_sig_handlers(){
     // 注意和上述SIGPIPE一样，也要设置受影响的慢系统调用重启。也可以按指导书说明用一个自定义的sig_chld
     // 函数来处理SIGCHLD信号(复杂些)
     struct sigaction sigact_chld, old_sigact_chld;
-    sigact_chld.sa_handler = sig_chld;
+    sigact_chld.sa_handler = SIG_IGN;
     sigact_pipe.sa_flags = 0;
     sigact_pipe.sa_flags |= SA_RESTART;
     sigemptyset(&sigact_chld.sa_mask);
@@ -370,3 +372,4 @@ int main(int argc, char* argv[])
 
     return 0;
 }
+
