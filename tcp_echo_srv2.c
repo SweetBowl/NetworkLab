@@ -10,7 +10,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/socket.h>
-#include <netinet/in.h>
+#include <netineta/in.h>
 #include <arpa/inet.h>
 #include <signal.h>
 #include <errno.h>
@@ -45,7 +45,7 @@ void sig_chld(int signo){
     int stat;
     bprintf(fp_res, "[srv](%d) SIGCHLD is coming!\n",pid);
     while ((pid_chld = waitpid(-1, &stat, WNOHANG)) > 0) {
-        bprintf(fp_res, "[srv](%d) child process(%d) terminated.\n",pid,pid_chld);
+      //  bprintf(fp_res, "[srv](%d) child process(%d) terminated.\n",pid,pid_chld);
     }
 }
 
@@ -262,8 +262,11 @@ int main(int argc, char* argv[])
     srv_addr.sin_addr.s_addr = inet_addr(argv[1]);
     srv_addr.sin_port = htons(atoi(argv[2]));
     //TODO 按题设要求打印服务器端地址server[ip:port]到fp_res文件中，推荐使用inet_ntop();
-    inet_ntop(AF_INET, &srv_addr.sin_addr, ip_str, sizeof(ip_str));
-    bprintf(fp_res, "[srv](%d) server[%s:%d] is initializing!\n",pid,ip_str,(int)ntohs(srv_addr.sin_port));
+    inet_pton(AF_INET, argv[1], &srv_addr.sin_addr);
+    //inet_ntop(AF_INET, &srv_addr.sin_addr, ip_str, sizeof(ip_str));
+    
+    fprintf(fp_res,"[srv](%d) server[%s:%d] is initializing!\n",pid,inet_ntop(AF_INET,&srv_addr.sin_addr,ip_str,16),ntohs(srv_addr.sin_port));
+    //bprintf(fp_res, "[srv](%d) server[%s:%d] is initializing!\n",pid,ip_str,(int)ntohs(srv_addr.sin_port));
     //TODO 获取Socket监听描述符: listenfd = socket(x,x,x);
     listenfd = socket(PF_INET, SOCK_STREAM, 0);
     if (listenfd == -1) {
@@ -299,9 +302,12 @@ int main(int argc, char* argv[])
         }
     
         //TODO 按题设要求打印客户端端地址client[ip:port]到fp_res文件中，推荐使用inet_ntop();
-        inet_ntop(AF_INET, &cli_addr.sin_addr, ip_str, sizeof(ip_str));
-        bprintf(fp_res, "[srv](%d) client[%s:%d] is accepted!\n",pid,ip_str,(int)ntohs(cli_addr.sin_port));
-        fflush(fp_res);
+//        inet_ntop(AF_INET, &cli_addr.sin_addr, ip_str, sizeof(ip_str));
+//        bprintf(fp_res, "[srv](%d) client[%s:%d] is accepted!\n",pid,ip_str,(int)ntohs(cli_addr.sin_port));
+//        fflush(fp_res);
+        fprintf(fp_res,"[srv](%d) client[%s:%d] is accepted!\n",pid,
+                inet_ntoa(cli_addr.sin_addr),
+                ntohs(cli_addr.sin_port));
         
         // 派生子进程对接客户端开展业务交互
         if(!fork()){// 子进程
